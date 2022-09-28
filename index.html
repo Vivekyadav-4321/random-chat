@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+</head>
+
+<body>
+
+    <div id="videocard"></div>
+    <div id="message"></div>
+
+    <script>
+        var peer = new Peer()
+        var socket = io();
+    </script>
+    <script>
+
+        const videocard = document.getElementById("videocard")
+      
+        navigator.mediaDevices.getUserMedia({ video: true }).then((myvideostream) => {
+            var peer = new Peer()
+            peer.on("open", (newuserphonenumber) => {
+            socket.emit("addnewuserphonenumber", (newuserphonenumber))
+        })
+
+        
+        socket.on("callthisuser", (randomuserphonenumber) => {
+            document.getElementById("message").innerHTML = "connecting.."
+            console.log("calling this user " + randomuserphonenumber);
+            const call = peer.call(randomuserphonenumber, myvideostream)
+                call.on("stream", (gettingvideooftheotheruserhere) => {
+                    var videoa = document.createElement("video")
+                    videoa.srcObject = gettingvideooftheotheruserhere
+                    
+                    videoa.addEventListener("loadedmetadata", () => {
+                        videoa.play()
+                    })
+                    videocard.append(videoa)
+
+                })
+        })
+
+               
+
+            peer.on("call", (call) => {
+                call.on("stream", (stream) => {
+                    var videob = document.createElement("video")
+                    videob.srcObject = stream
+                    videocard.append(videob)
+                    console.log("playing");
+                    videob.addEventListener("loadedmetadata", () => {
+                        videob.play()
+                        console.log("playing");
+                    })
+                })
+                call.answer(myvideostream)
+            })
+        }).catch((err)=>{console.log(err);})
+    
+        socket.on("youhavetowait", () => {
+            console.log("this user is waiting to be called");
+            document.getElementById("message").innerHTML = "please wait for someone to come online"
+        })
+
+
+
+    </script>
+</body>
+
+</html>
